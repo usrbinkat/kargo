@@ -1,0 +1,44 @@
+# mdadm --create --verbose /dev/md127 --metadata=0.90 --level=0 --raid-devices=4 /dev/nvme3n1 /dev/nvme5n1 /dev/nvme6n1 /dev/nvme4n1
+# mdadm --detail --scan
+#- device: /dev/md/ubuntu:127
+#- device: /dev/disk/by-id/md-name-ubuntu:127
+#  partitions:
+#    - mountpoint: /var/mnt/hostpath-provisioner/optane
+#- device: /dev/disk/by-id/ata-Samsung_SSD_870_EVO_4TB_S6BBNS0RC03600X
+#  partitions:
+#    - mountpoint: /var/mnt/hostpath-provisioner/ssd
+#- device: /dev/disk/by-id/nvme-PC611_NVMe_SK_hynix_512GB_CY07N060610307R65
+machine:
+  network:
+    hostname: "mordor"
+    interfaces:
+      - interface: br0
+        dhcp: true
+        bridge:
+          interfaces:
+            - eno1
+            - eno2
+  disks:
+    - device: /dev/nvme2n1
+      partitions:
+        - mountpoint: /var/lib/kubelet
+          size: 64GB
+        - mountpoint: /var/lib/etcd
+          size: 64GB
+        - mountpoint: /var/lib/containerd
+  kubelet:
+    extraMounts:
+      - destination: /etc/cni/net.d
+        type: bind
+        source: /etc/cni/net.d
+        options:
+          - bind
+          - rshared
+          - rw
+      - destination: /opt/cni/bin
+        type: bind
+        source: /opt/cni/bin
+        options:
+          - bind
+          - rshared
+          - rw

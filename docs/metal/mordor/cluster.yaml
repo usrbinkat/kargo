@@ -1,0 +1,20 @@
+# disk: /dev/disk/by-id/usb-DELL_IDSDM_012345678901-0:0
+kind: Cluster
+name: mordor
+talos:
+  version: v1.7.6
+kubernetes:
+  version: v1.30.4
+---
+kind: ControlPlane
+machines:
+  - 4c4c4544-004a-4d10-8052-c4c04f4e5932
+patches:
+  - file: docs/metal/mordor/patch.yaml
+---
+kind: Machine
+name: 4c4c4544-004a-4d10-8052-c4c04f4e5932
+install:
+  disk: /dev/sda
+patches:
+  - file: docs/metal/mordor/machine.yaml

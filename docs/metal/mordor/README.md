@@ -1,234 +1,200 @@
 # Kargo Platform Development Pathfinding Journal
 
-> Note: All commands are run from the git repository opened in VSCode Konductor Devcontainer
-> \*unless otherwise specified
-
 ## Pathfinding Build Log
+
+> Note: All commands run from the included Github Codespaces Devcontainer environment
 
 ### 1. Wipe all block device partitions and partition tables
 
-> Note: _I used the following commands to wipe all partitions and partition tables from the host disks from a live Ubuntu Desktop USB session, use what ever methods you prefer to accomplish this task_
+### 2. Boot Omni Talos on the node(s)
 
-1. Write Ubuntu Desktop iso to USB device
-1. Boot Ubuntu Desktop
-1. Use gparted, gnome disks, wipefs, or sfdisk, or other disk utility to delete all partitions on all host disks
+a. Download Talos ISO from Omni Dashboard Image Factory
 
-```bash
-# Execute these commands from a live Ubuntu Desktop USB session
-# Warning this will erase all data from each disk
-# These commands show wiping a single NVMe device, repeat for all of your system disks
-wipefs --all --force /dev/nvme0n1
-sfdisk --delete --wipe always /dev/nvme0n1
+> Note: URL format follows: `https://${ACCOUNT}.omni.siderolabs.io/omni/?modal=downloadInstallationMedia`
+
+![alt text](.assets/image-1.png)
+
+b. Write talos iso to USB device & Boot the node(s) from talos USB
+
+> Note: _I used [balenaEtcher](https://etcher.balena.io) to write the iso to a USB_
+
+c. Boot the node(s) from the talos USB
+
+![alt text](.assets/image-2.png)
+
+d. Verify connection to Omni Console > Machines
+
+![alt text](.assets/image-3.png)
+
+### 3. Pulumi Login & Prep
+
+1. Pulumi Login
+
+```bash {"id":"01J6MTD7H4YQQQ41E9FH168RV6"}
+# Login
+pulumi login
+
+# Init Pulumi ESC Emvironment for local config and env
+eval $(pulumi env open --format=shell optiplexprime)
+
+# create the organization and project stack
+pulumi stack select --create usrbinkat/kargo/optiplexprime
+
+# or select the stack
+pulumi stack select usrbinkat/kargo/optiplexprime
 ```
 
-### 2. Install Talos on the Host Machine(s)
+2. Omni CLI Login
 
-#### 1. Download Talos ISO
-
-> Note: _download this iso to the host machine which you will write USB devices from_
-
-```bash
-export VERSION=$(curl -sL https://api.github.com/repos/siderolabs/talos/releases/latest | jq --raw-output .tag_name); echo $VERSION
-curl --output ~/Downloads/talos-$VERSION-metal-amd64.iso -sL "https://github.com/siderolabs/talos/releases/download/$VERSION/metal-amd64.iso"
+```bash {"id":"01J6MTD7H4YQQQ41E9FMD739CK"}
+# Run command to login by following along with the prompts
+omnictl get machines
 ```
 
-#### 2. Write talos iso to USB device & Boot the node(s) from talos USB
+3. Kubectl Login
 
-> Note: _I used balenaEtcher to write the iso to a USB device_
-
-![Alt text](.assets/01-talos-console.png)
-
-#### 3. Generate Talos Cluster Configuration File(s)
-
-> Note: Talos Kubernetes Version Support Matrix Link: https://www.talos.dev/latest/introduction/support-matrix
-
-```bash
-# Prepare the local directory
-mkdir -p .kube .talos
-direnv allow
-
-# Check hardware components
-# Find the IP Address of your node on the talos console top right information list
-
-# Query the network links of your node(s) and save the output to a yaml file
-talosctl --nodes 192.168.1.156 get links --insecure | tee 156.links.list
-
-# Find the disk configuration of your node(s)
-talosctl --nodes 192.168.1.156 disks --insecure | tee 156.disks.list
-
-# Generate your talos kubernetes secrets
-talosctl gen secrets --output-file secrets.yaml
-
-# Generate the talos machine boilerplate configuration files
-# Populate the install disk flag with the block device of your choice following the disks.list from earlier
-talosctl gen config kargo "https://api.kube.mordor.kargo.io:6443" \
-    --additional-sans "192.168.1.30,api.kube.mordor.kargo.io" \
-    --with-secrets ./secrets.yaml \
-    --persist \
-    --output .
+```bash {"id":"01J6MTD7H4YQQQ41E9FP8105X7"}
+kubectl get nodes -owide
 ```
 
-#### 4. Edit Talos Machine Configuration File(s)
+4. Talosctl Login
 
-- Validate the talos machine configuration file(s) with the following command
-- Resolve any errors before proceeding
-
-```bash
-talosctl validate --mode metal --config 164.controlplane.yaml
+```bash {"id":"01J6MTD7H4YQQQ41E9FR05PQCT"}
+talosctl --nodes $(kubectl get nodes | awk '/talos-/{print $1}' | head -n1) dashboard
 ```
 
-> see included pathfinder/41.controlplane.yaml for example
+### 5. Create Cluster Omni Talos Cluster
 
-#### 5. Apply Talos Cluster Config
+a. Apply cluster template with omnictl
 
-```bash
-# Apply the cluster configuration to each node
-talosctl apply-config \
-    --nodes 192.168.1.156 \
-    --endpoints 192.168.1.156 \
-    --file controlplane.yaml \
-    --insecure
+```bash {"id":"01J6MTD7H4YQQQ41E9FS4Y32HQ"}
+# Validate Cluster Template
+omnictl cluster template validate -f docs/metal/optiplexprime/cluster.yaml
 
-# Bootstrap the first controlplane etcd node
-# *be careful to wait for node to cycle through reboot before proceeding to bootstrap command
-# *bootstrap may return an error if the node is not ready after the network bridge creation config applies
-talosctl bootstrap --nodes 192.168.1.156 --endpoints 192.168.1.156
+# Apply Omni CR to create cluster
+omnictl cluster template sync -f docs/metal/optiplexprime/cluster.yaml
+
+# Monitor progress
+omnictl cluster template status -f docs/metal/optiplexprime/cluster.yaml
 ```
 
-#### 6. Load configs in local directory tree for now
+![](.assets/image-4.png)
 
-```bash
-# move talosconfig to .talos/config
-mv talosconfig .talos/config
+### 6. Configure Pulumi ESC
 
-# My talos config generated an endpoint address of 127.0.0.1
-# this obviously will not work so let's change that to our VIP
-sed -i 's/127.0.0.1/192.168.1.30/g' .talos/config
+* talosconfig
+* omniconfig
+* kubeconfig
+* Download and add the `--skip-open-browser` flag to the kubeconfig oidc-login command arguments
 
-# Generate kubeconfig ./.kube/config
-talosctl --nodes 192.168.1.156 kubeconfig .kube/config --force
-
-# Kubeconfig is generated with FQDN API endpoint by default since I configured it in the machine cfg
-# If DNS is not configured to resolved your api endpoint you can use the following command to replace the FQDN with the IP Address
-# Use the IP Address of the VIP for your controlplane in place of the DNS name of your endpoint
-sed -i 's/api.kube.mordor.kargo.io/192.168.1.30/g' .kube/config
+```yaml {"id":"01J6QBPTVAZFXE26XEFYE0X1RF"}
+values:
+  sidero:
+    talosconfig: |
+      context: usrbinkat-optiplexprime
+      contexts:
+          usrbinkat-optiplexprime:
+              endpoints:
+                  - https://usrbinkat.omni.siderolabs.io
+              auth:
+                  siderov1:
+                      identity: kathryn.morgan@braincraft.io
+              cluster: optiplexprime
+    omniconfig: |
+      context: default
+      contexts:
+          default:
+              url: https://usrbinkat.omni.siderolabs.io
+              auth:
+                  siderov1:
+                      identity: kathryn.morgan@braincraft.io
+  kubernetes:
+    kubeconfig: |
+      apiVersion: v1
+      kind: Config
+      clusters:
+        - cluster:
+            server: https://usrbinkat.kubernetes.omni.siderolabs.io
+          name: usrbinkat-optiplexprime
+      contexts:
+        - context:
+            cluster: usrbinkat-optiplexprime
+            namespace: default
+            user: usrbinkat-optiplexprime-kathryn.morgan@braincraft.io
+          name: usrbinkat-optiplexprime
+      current-context: usrbinkat-optiplexprime
+      users:
+      - name: usrbinkat-optiplexprime-kathryn.morgan@braincraft.io
+        user:
+          exec:
+            apiVersion: client.authentication.k8s.io/v1beta1
+            args:
+              - oidc-login
+              - get-token
+              - --oidc-issuer-url=https://usrbinkat.omni.siderolabs.io/oidc
+              - --oidc-client-id=native
+              - --oidc-extra-scope=cluster:optiplexprime
+              - --skip-open-browser
+            command: kubectl
+            env: null
+            provideClusterInfo: false
+  environmentVariables:
+    BROWSER: echo
+  pulumiConfig:
+    kubeconfig: ${kubernetes.kubeconfig}
+  files:
+    KUBECONFIG: ${kubernetes.kubeconfig}
+    OMNICONFIG: ${sidero.omniconfig}
+    TALOSCONFIG: ${sidero.talosconfig}
 ```
 
-#### 7. Check your cluster status
-
-```bash
-# Check the status of your cluster
-kubectl get po -A
-
-# check for pending Certificate Signing Requests (CSR)
-kubectl get csr
-
-# Approve the pending CSR(s)
-kubectl get csr | awk '/Pending/ {print $1}' | xargs -n 1 kubectl certificate approve
-
-# Check the status of your cluster
-# All pods should come up except for coredns pods because we still need to deploy the cilium CNI
-kubectl get po -A
+```bash {"id":"01J6MTD7H4YQQQ41E9G092KCPQ"}
+# Get Pods
+kubectl get pods -A
 ```
 
-![screenshot of bootstrapping talos cluster with controlplane configs and etcd bootstrap command](.assets/02-vscode-talosctl-apply-config.png)
+### 6. Deploy Kargo Platform
 
-### References
+```bash {"id":"01J6MTD7H4YQQQ41E9G12YHVMJ"}
+# Create a new Pulumi stack & set kube context
+pulumi stack select --create usrbinkat/kargo/optiplexprime
 
-```bash
-# Get Talos Disk Usage
-talosctl --nodes 192.168.1.156 usage -H 2>/dev/null | grep -v readlink | tee du.list
+# Explicitly set kube context
+pulumi config set --path kubernetes.context usrbinkat-optiplexprime
+
+# Enable Ubuntu VM instance
+pulumi config set --path vm.enabled true
+
+# Deploy Kargo Platform (note: repeat command until all resources are healthy)
+pulumi up --skip-preview --refresh=true --continue-on-error; pulumi up --skip-preview --refresh=true --continue-on-error; pulumi up --skip-preview --refresh=false
 ```
 
-#### Apply Config Changes
+### 7. **Deploy a Virtual Machine:**
 
-```bash
-# Apply the cluster configuration to each node
-talosctl apply-config \
-    --nodes 192.168.1.156 \
-    --endpoints 192.168.1.156 \
-    --file 164.controlplane.yaml
+Deploy an Ubuntu Virtual Machine on the platform using Kubevirt.
+
+> **Note:** Run this step manually via integrated terminal.
+
+```bash {"excludeFromRunAll":"true","id":"01J6MTD7H4YQQQ41E9G20FW0GC","name":"vm"}
+# Enable the VM instance
+pulumi config set --path vm.enabled true
+
+# Deploy the Kubevirt VM instance
+pulumi up --skip-preview --refresh=false
 ```
 
-#### Wipe Nodes & Reset
+### 8. Deploy a tenant talos cluster
 
-```bash
-# If necessary perform an API call to reset the node(s) to a clean state
-# CAUTION:
-#  - This will destroy all data on the node(s)
+```bash {"id":"01J6MTD7H4YQQQ41E9G4KQ6F5E"}
+# change to the tenant talos dev directory
+cd metal/dev
 
-# All nodes
-talosctl reset --graceful=false --reboot --wipe-mode all --system-labels-to-wipe STATE --system-labels-to-wipe EPHEMERAL --wait=false --nodes mordor
-
-# Individual nodes
-talosctl reset --debug \
-    --nodes 192.168.1.30 \
-    --endpoints 192.168.1.30 \
-    --system-labels-to-wipe STATE \
-    --system-labels-to-wipe EPHEMERAL \
-    --graceful=false \
-    --reboot --wait=false
+# Apply the tenant talos
+./apply.sh
 ```
 
----
+## OptiplexPrime Cluster
 
-# DBG Multus CNI
+3 node optiplex based cluster.
 
-```bash
-### Install Multus
-kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
-
-### Check config on nodes
-talosctl --talosconfig ~/.talos/config -e 192.168.1.156 -n 192.168.1.156 ls /etc/cni/net.d
-talosctl --talosconfig ~/.talos/config -e 192.168.1.156 -n 192.168.1.156 read /etc/cni/net.d/00-multus.conf | jq .
-talosctl --talosconfig ~/.talos/config -e 192.168.1.156 -n 192.168.1.156 ls /opt/cni/bin
-
-### List node links
-talosctl --talosconfig ~/.talos/config -e 192.168.1.156 -n 192.168.1.156 get link
-
-### Create multus network
-cat <<EOF | kubectl apply -f -
-apiVersion: "k8s.cni.cncf.io/v1"
-kind: NetworkAttachmentDefinition
-metadata:
-  name: br0
-  namespace: kube-system
-spec:
-  config: '{
-      "cniVersion": "0.3.0",
-      "type": "macvlan",
-      "master": "br0",
-      "mode": "bridge",
-      "ipam": {
-        "type": "host-local",
-        "subnet": "192.168.1.0/24",
-        "rangeStart": "192.168.1.200",
-        "rangeEnd": "192.168.1.216",
-        "routes": [
-          { "dst": "0.0.0.0/0" }
-        ],
-        "gateway": "192.168.1.1"
-      }
-    }'
-EOF
-
-### List net-attach-def
-kubectl -n kube-system get network-attachment-definitions
-
-### Run test pod
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: samplepod
-  namespace: kube-system
-  annotations:
-    k8s.v1.cni.cncf.io/networks: br0
-spec:
-  containers:
-  - name: k
-    command: ["/bin/bash", "-c", "trap : TERM INT; sleep infinity & wait"]
-    image: ghcr.io/containercraft/konductor
-EOF
-
-```
+![optiplexprime](.assets/image.png)

@@ -69,7 +69,7 @@ machine:
             - talos.platform=metal
             - reboot=k
     disks:
-        - device: /dev/nvme2n1
+        - device: /dev/disk/by-id/nvme-PC611_NVMe_SK_hynix_512GB_CY07N060610307R65
           partitions:
               - mountpoint: /var/lib/kubelet
                 size: 32GB
@@ -77,7 +77,6 @@ machine:
                 size: 32GB
               - mountpoint: /var/lib/containerd
                 size: 128GB
-              - mountpoint: /var/mnt/local-path-provisioner/dev/nvme
     registries: {}
     features:
         rbac: true

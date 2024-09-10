@@ -6,7 +6,7 @@ metadata:
   labels:
     app: disk-erase
 spec:
-  nodeName: talos-3l6-kgu
+  nodeName: mordor
   containers:
     - image: ghcr.io/containercraft/konductor
       name: disk-erase-container
@@ -53,113 +53,113 @@ spec:
       hostPath:
         path: /
         type: Directory
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disk-erase-pod-op2
-  labels:
-    app: disk-erase
-spec:
-  nodeName: talos-5um-rqo
-  containers:
-    - image: ghcr.io/containercraft/konductor
-      name: disk-erase-container
-      command: ["/bin/bash", "-c", "sleep infinity"]
-      #command: [
-      #  "/bin/bash",
-      #  "-c",
-      #  "sudo apt update && sudo apt install -y fdisk && sudo fdisk --delete /mnt/root/dev/sda; sudo wipefs --all /mnt/root/dev/sda; sync; echo 'done'"
-      #]
-      imagePullPolicy: IfNotPresent
-      securityContext:
-        privileged: true
-        capabilities:
-          add: ["SYS_ADMIN", "NET_ADMIN"]
-        runAsUser: 0
-      volumeMounts:
-        - name: dev
-          mountPath: /mnt/root/dev
-        - name: sys
-          mountPath: /mnt/root/sys
-        - name: proc
-          mountPath: /mnt/root/proc
-        - name: root
-          mountPath: /mnt/root
-      resources:
-        limits:
-          cpu: "1"
-          memory: "1Gi"
-  hostPID: true
-  hostIPC: true
-  hostNetwork: true
-  restartPolicy: Never
-  volumes:
-    - name: dev
-      hostPath:
-        path: /dev
-    - name: sys
-      hostPath:
-        path: /sys
-    - name: proc
-      hostPath:
-        path: /proc
-    - name: root
-      hostPath:
-        path: /
-        type: Directory
----
-apiVersion: v1
-kind: Pod
-metadata:
-  name: disk-erase-pod-op3
-  labels:
-    app: disk-erase
-spec:
-  nodeName: talos-s1t-lsd
-  containers:
-    - image: ghcr.io/containercraft/konductor
-      name: disk-erase-container
-      command: ["/bin/bash", "-c", "sleep infinity"]
-      #command: [
-      #  "/bin/bash",
-      #  "-c",
-      #  "sudo apt update && sudo apt install -y fdisk && sudo fdisk --delete /mnt/root/dev/sda; sudo wipefs --all /mnt/root/dev/sda; sync; echo 'done'"
-      #]
-      imagePullPolicy: IfNotPresent
-      securityContext:
-        privileged: true
-        capabilities:
-          add: ["SYS_ADMIN", "NET_ADMIN"]
-        runAsUser: 0
-      volumeMounts:
-        - name: dev
-          mountPath: /mnt/root/dev
-        - name: sys
-          mountPath: /mnt/root/sys
-        - name: proc
-          mountPath: /mnt/root/proc
-        - name: root
-          mountPath: /mnt/root
-      resources:
-        limits:
-          cpu: "1"
-          memory: "1Gi"
-  hostPID: true
-  hostIPC: true
-  hostNetwork: true
-  restartPolicy: Never
-  volumes:
-    - name: dev
-      hostPath:
-        path: /dev
-    - name: sys
-      hostPath:
-        path: /sys
-    - name: proc
-      hostPath:
-        path: /proc
-    - name: root
-      hostPath:
-        path: /
-        type: Directory
+#---
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: disk-erase-pod-op2
+#  labels:
+#    app: disk-erase
+#spec:
+#  nodeName: talos-5um-rqo
+#  containers:
+#    - image: ghcr.io/containercraft/konductor
+#      name: disk-erase-container
+#      command: ["/bin/bash", "-c", "sleep infinity"]
+#      #command: [
+#      #  "/bin/bash",
+#      #  "-c",
+#      #  "sudo apt update && sudo apt install -y fdisk && sudo fdisk --delete /mnt/root/dev/sda; sudo wipefs --all /mnt/root/dev/sda; sync; echo 'done'"
+#      #]
+#      imagePullPolicy: IfNotPresent
+#      securityContext:
+#        privileged: true
+#        capabilities:
+#          add: ["SYS_ADMIN", "NET_ADMIN"]
+#        runAsUser: 0
+#      volumeMounts:
+#        - name: dev
+#          mountPath: /mnt/root/dev
+#        - name: sys
+#          mountPath: /mnt/root/sys
+#        - name: proc
+#          mountPath: /mnt/root/proc
+#        - name: root
+#          mountPath: /mnt/root
+#      resources:
+#        limits:
+#          cpu: "1"
+#          memory: "1Gi"
+#  hostPID: true
+#  hostIPC: true
+#  hostNetwork: true
+#  restartPolicy: Never
+#  volumes:
+#    - name: dev
+#      hostPath:
+#        path: /dev
+#    - name: sys
+#      hostPath:
+#        path: /sys
+#    - name: proc
+#      hostPath:
+#        path: /proc
+#    - name: root
+#      hostPath:
+#        path: /
+#        type: Directory
+#---
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: disk-erase-pod-op3
+#  labels:
+#    app: disk-erase
+#spec:
+#  nodeName: talos-s1t-lsd
+#  containers:
+#    - image: ghcr.io/containercraft/konductor
+#      name: disk-erase-container
+#      command: ["/bin/bash", "-c", "sleep infinity"]
+#      #command: [
+#      #  "/bin/bash",
+#      #  "-c",
+#      #  "sudo apt update && sudo apt install -y fdisk && sudo fdisk --delete /mnt/root/dev/sda; sudo wipefs --all /mnt/root/dev/sda; sync; echo 'done'"
+#      #]
+#      imagePullPolicy: IfNotPresent
+#      securityContext:
+#        privileged: true
+#        capabilities:
+#          add: ["SYS_ADMIN", "NET_ADMIN"]
+#        runAsUser: 0
+#      volumeMounts:
+#        - name: dev
+#          mountPath: /mnt/root/dev
+#        - name: sys
+#          mountPath: /mnt/root/sys
+#        - name: proc
+#          mountPath: /mnt/root/proc
+#        - name: root
+#          mountPath: /mnt/root
+#      resources:
+#        limits:
+#          cpu: "1"
+#          memory: "1Gi"
+#  hostPID: true
+#  hostIPC: true
+#  hostNetwork: true
+#  restartPolicy: Never
+#  volumes:
+#    - name: dev
+#      hostPath:
+#        path: /dev
+#    - name: sys
+#      hostPath:
+#        path: /sys
+#    - name: proc
+#      hostPath:
+#        path: /proc
+#    - name: root
+#      hostPath:
+#        path: /
+#        type: Directory
