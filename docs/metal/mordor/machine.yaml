@@ -19,6 +19,9 @@ machine:
             - eno1
             - eno2
   disks:
+    - device: /dev/nvme5n1
+      partitions:
+        - mountpoint: /var/mnt/hostpath-provisioner/nvme
     - device: /dev/nvme2n1
       partitions:
         - mountpoint: /var/lib/kubelet

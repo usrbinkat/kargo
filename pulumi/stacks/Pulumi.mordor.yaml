@@ -1,0 +1,29 @@
+config:
+  kargo:hostpath_provisioner:
+    default_path: /var/mnt/hostpath-provisioner/nvme
+    default_storage_class: true
+    enabled: true
+  kargo:kubernetes:
+    kubeconfig: /Users/usrbinkat/.kube/omni
+    kubecontext: usrbinkat-mordor
+  kargo:talos:
+    controlplane:
+      cpu_cores: 4
+      empty_disk_size: "0"
+      image: docker.io/containercraft/omni:1.7.6
+      memory_size: "6"
+      network_name: "br0"
+      replicas: single
+      root_disk_size: "42"
+    enabled: true
+    running: true
+    workers:
+      cpu_cores: 4
+      empty_disk_size: "16"
+      image: docker.io/containercraft/omni:1.7.6
+      memory_size: "16"
+      network_name: "br0"
+      replicas: 3
+      root_disk_size: "42"
+  kargo:vm:
+    enabled: false
