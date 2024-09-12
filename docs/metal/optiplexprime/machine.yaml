@@ -12,6 +12,16 @@ machine:
       partitions:
         - mountpoint: /var/mnt/hostpath-provisioner/ssd
   kubelet:
+    extraArgs:
+      # Rotate server certificates automatically
+      # https://kubernetes.io/docs/tasks/tls/certificate-rotation/
+      # Approve the CSR requests for the kubelet to rotate the certificates
+      # https://kubernetes.io/docs/tasks/tls/certificate-rotation/#approving-the-csr-requests
+      # Example Command:
+      # kubectl get csr | grep Pending | awk '{print $1}' | xargs kubectl certificate approve
+      # Example Command for All Namespaces:
+      # kubectl get csr --no-headers | awk '/Pending/ {print $1}' | xargs -I {} kubectl certificate approve {}
+      rotate-server-certificates: true
     extraMounts:
       - destination: /etc/cni/net.d
         type: bind
