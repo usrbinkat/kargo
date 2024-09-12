@@ -1,24 +1,28 @@
 config:
   kargo:kubernetes:
     context: usrbinkat-optiplexprime # Kubernetes context for the stack
+  kargo:vm: # Ubuntu VM deployment configuration
+    enabled: true # Disable VM deployment (set to true if needed)
   kargo:talos:
     enabled: true # Enable Talos deployment
-    running: false # Kargo-on-Kargo Dev Cluster Running/Stopped
+    running: true # Kargo-on-Kargo Dev Cluster Running/Stopped
     controlplane:
       replicas: ha # Specifies 'single' (1) or 'ha' (3) replicas
-      cpu_cores: 1 # Controlplane CPU cores
-      empty_disk_size: "0" # Controlplane empty disk size (0 for no empty disk)
-      image: docker.io/containercraft/omni:1.7.6 # Image to use for controlplane
-      memory_size: "2" # Controlplane memory in GiB
+      cpu_cores: 2 # Controlplane CPU cores
+      memory_size: "4" # Controlplane memory in GiB
       network_name: "br0" # Multus network name for controlplane
       root_disk_size: "32" # Controlplane root disk size in GiB
+      empty_disk_size: "0" # Controlplane empty disk size (0 for no empty disk)
+      image: docker.io/containercraft/talos:1.7.4 # Image to use for controlplane
     workers:
-      replicas: 2 # Worker replicas, set 0 to disable workers vmpool
-      cpu_cores: 3 # Worker CPU cores
-      empty_disk_size: "16" # Extra disk size in GiB, set 0 to disable
-      image: docker.io/containercraft/omni:1.7.6 # Image to use for workers
-      memory_size: "6" # Worker memory in GiB
+      replicas: 3 # Worker replicas, set 0 to disable workers vmpool
+      cpu_cores: 4 # Worker CPU cores
+      memory_size: "8" # Worker memory in GiB
       network_name: "br0" # Multus network name for workers
       root_disk_size: "64" # Root disk size in GiB
-  kargo:vm: # Ubuntu VM deployment configuration
-    enabled: false # Disable VM deployment (set to true if needed)
+      empty_disk_size: "64" # Extra disk size in GiB, set 0 to disable
+      image: docker.io/containercraft/talos:1.7.4 # Image to use for workers
+  kargo:hostpath_provisioner:
+    default_path: /var/mnt/hostpath-provisioner/ssd
+    default_storage_class: true
+    enabled: true
